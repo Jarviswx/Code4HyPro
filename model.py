@@ -18,10 +18,10 @@ class ContrastiveLoss(nn.Module):
     def forward(self, output1, target):
         SIZE = output1.shape[0]
 
-        target_expanded = target.unsqueeze(1)  # (256, 1)
+        target_expanded = target.unsqueeze(1) 
         mask = (target_expanded == target)
-        penalty = self.calculate_penalty(output1, mask)# (256, 256) 的布尔矩阵
-        output2 = (mask.float() @ output1)  # 使用矩阵乘法优化
+        penalty = self.calculate_penalty(output1, mask)
+        output2 = (mask.float() @ output1)  
 
 
         output1 = F.normalize(output1, dim=1)
@@ -42,10 +42,10 @@ class ContrastiveLoss(nn.Module):
     def calculate_penalty(self, sessions, mask):
         neighbor_sessions = torch.matmul(mask.float(), sessions)
 
-        valid_count = mask.sum(dim=1, keepdim=True)  # 计算每行有效的元素数量，形状为 (100, 1, 1)
-        mean = neighbor_sessions.sum(dim=1, keepdim=True) / valid_count  # 计算有效位置的均值
+        valid_count = mask.sum(dim=1, keepdim=True)  
+        mean = neighbor_sessions.sum(dim=1, keepdim=True) / valid_count  
         squared_diff = ((neighbor_sessions - mean) ** 2)
-        variance = squared_diff.sum(dim=1) / valid_count.squeeze(-1)  # 对有效位置计算方差
+        variance = squared_diff.sum(dim=1) / valid_count.squeeze(-1)  
         penalty = 1 + 0.1 * self.normalize_matrix(variance)
         penalty = torch.cat([penalty, penalty], dim=0)
         return penalty
@@ -53,7 +53,7 @@ class ContrastiveLoss(nn.Module):
     def normalize_matrix(self, matrix):
         min_vals, _ = torch.min(matrix, dim=0, keepdim=True)
         max_vals, _ = torch.max(matrix, dim=0, keepdim=True)
-        normalized_matrix = (matrix - min_vals) / (max_vals - min_vals + 1e-7)  # 防止除零
+        normalized_matrix = (matrix - min_vals) / (max_vals - min_vals + 1e-7)  
         return normalized_matrix
 
     def sample_mask(self, targets):
@@ -66,7 +66,7 @@ class ContrastiveLoss(nn.Module):
         mask = np.ones((len(targets), len(targets)))
         for i, target in enumerate(targets):
             for j in cl_dict[target]:
-                if abs(j - i) != len(targets) / 2:  # 防止mask将正样本的位置置为零
+                if abs(j - i) != len(targets) / 2:  
                     mask[i][j] = 0
         return trans_to_cuda(torch.Tensor(mask)).float()
 
